@@ -1,126 +1,72 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
 function App() {
-  const[name, setName] = useState("");
-  const[amount, setAmount] = useState("");
-  const[category, setCategory] = useState("");
-  const[filterCategory, setFilterCategory] = useState("");
-  const [expense, setExpense] = useState(() => {
-  const savedExpenses = localStorage.getItem("expenses");
+  const[city, setCity] = useState("");
+  const[weather, setWeather] = useState(null);
+  const[loading, setLoading] = useState(false);
+  const[error, setError] = useState("");
 
-  if (savedExpenses) {
-    return JSON.parse(savedExpenses);
-  }
-
-  return [];
-});
-  //adding expense
-  const addExpense = () => {
-    if(name === "" || amount === "" || category === "") {
-      alert("Please fill the input");
+  const search = async () => {
+    if(city === "") {
+      alert("Please enter a city");
       return;
     }
-    setExpense([...expense, {name, amount, category}])
-    setName("");
-    setAmount("");
-    setCategory("");
+    const API_KEY = import.meta.env.VITE_API_KEY;
+    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
+    setLoading(true);
+    const response = await fetch(url);
+    const data = await response.json();
+    setLoading(false);
+    if(data.cod === "404") {
+      setError("❌ City not found")
+      setWeather(null);
+      return;
+    }
+    setWeather(data);
+    setCity("");
+    setError("");
   }
+  let iconurl = "";
 
-  //Deleting expense
-  const deleteExpense = (index) => {
-    const newExpense = expense.filter((e,i)=>{
-      return i !== index;
-    })
-    setExpense(newExpense)
+  if (weather) {
+    const iconCode = weather.weather[0].icon;
+    iconurl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
   }
-   //filtering
-  const filteredExpenses = expense.filter((e)=>{
-    if(filterCategory === "") return true;
-    return e.category === filterCategory;
-  })
-  //
-  ///total expense
-  const totalExpense = filteredExpenses.reduce((total,item)=>{
-    return total+Number(item.amount);
-  },0);
-  
-  
-
-  
-  useEffect(()=>{
-    localStorage.setItem("expenses", JSON.stringify(expense));
-  },[expense]);
- 
-  useEffect(()=>{
-    const savedExpenses = localStorage.getItem("expenses");
-    console.log("Saved:", savedExpenses);
-
-    if(savedExpenses) {
-    const parsedExpenses = JSON.parse(savedExpenses);
-    setExpense(parsedExpenses);
-  }
-  },[])
-  
-
-    return(
-      <div className="app">
-        <h1>Expense Tracker</h1>
-        {/* Form Section */}
-        <div className="expense-card">
-          <h3>Expense Name</h3>
-          <input type="text" placeholder="Movies" value={name} onChange={(e)=>setName(e.target.value)}></input>
-          <h3>Amount</h3>
-          <input type="number" placeholder="60" value={amount} onChange={(e)=>setAmount(e.target.value)}></input>
-          
-          <select value={category} onChange={(e)=>setCategory(e.target.value)}>
-            <option value="">Select the category</option>
-            <option value="Food">Food</option>
-            <option value="Travel">Travel</option>
-            <option value="Entertaiment">Entertaiment</option>
-          </select>
-          
-          <button className="add-btn" onClick={addExpense}>
-          Add Expense
-          </button>  
-        </div>
-
-      {/*Filter setion*/}
-      <div className="filter-section">
-        <select value={filterCategory} onChange={(e)=>setFilterCategory(e.target.value)}>
-          <option value="">Show all the category (filter) </option>
-          <option value="Food">Food</option>
-          <option value="Travel">Travel</option>
-          <option value="Entertaiment">Entertaiment</option>
-        </select>
+  const currentDate = new Date();
+  const dateString = currentDate.toDateString();
+  const timeString = currentDate.toLocaleTimeString();
+  return(
+    <div className="app">
+      <div className="header">
+        <h1>Weather Dashboard</h1>
       </div>
-
-      {/* Expense List */}
-      <div className="expense-list">
-        {filteredExpenses.length === 0 ? (
-          <div className="empty-state">
-            No expenses found.
-          </div>
-          ) : (
-            filteredExpenses.map((e, index)=>{
-            return(
-              <div className="expense-item" key={index}>
-                <div>
-                  <strong>{e.name}</strong>
-                  <p>₹{e.amount}</p>
-                  <span className="category-badge">
-                    {e.category}
-                  </span>
-                </div>
-                <button onClick={()=>deleteExpense(index)} className="delete-btn">Delete</button>
-              </div>
-            );
-          })
-        )}
+      <div className="sub-content">
+        <input placeholder="Enter your city" value={city} onChange={(e) => setCity(e.target.value)} 
+          onKeyDown={(e) => {
+          if(e.key === "Enter") {
+            search();
+          }
+        }}></input>
+        <button onClick={search}> Search </button>
       </div>
-        <div className="total-expense">
-          Total Expense: ₹{totalExpense}
-        </div>
-      </div>
-    );
+      { (loading || error || weather) && (
+        <div className="main-content">
+          {loading && <h2>Loading....</h2>}
+          {weather && (
+            <div>
+              <h2>📅 {dateString}</h2>
+              <h2>🕒 {timeString}</h2>
+              <h2>📍 City: {weather.name}</h2>
+              <h2>🌡️ Temperature: {weather.main.temp}°C</h2>
+              <h2>☁️ Condition: {weather.weather[0].main}</h2>
+              <h2>💨 Wind Speed: {weather.wind.speed} m/s</h2>
+              <img src={iconurl} alt="Weather Icon" />
+            </div>
+          )}
+          {error && <h2 className="error">{error}</h2>}
+        </div>)
+      }
+    </div>
+  );
 }
-
 export default App;
