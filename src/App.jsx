@@ -1,71 +1,71 @@
 import { useState } from "react";
-
 function App() {
-  const[city, setCity] = useState("");
-  const[weather, setWeather] = useState(null);
+  const[searchTerm, setSearchTerm] = useState("");
+  const[movies, setMovies] = useState([]);
   const[loading, setLoading] = useState(false);
   const[error, setError] = useState("");
-
   const search = async () => {
-    if(city === "") {
-      alert("Please enter a city");
+    if(!searchTerm.trim()) {
+      alert("Please enter the movie name");
       return;
     }
-    const API_KEY = import.meta.env.VITE_API_KEY;
-    const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`;
+    const url = `http://www.omdbapi.com/?i=tt3896198&apikey=cc3f2308&s=${searchTerm}`
     setLoading(true);
     const response = await fetch(url);
     const data = await response.json();
     setLoading(false);
-    if(data.cod === "404") {
-      setError("❌ City not found")
-      setWeather(null);
+    if(data.Response === "False") {
+      setError(data.Error);
+      setMovies([]);
+      setLoading(false);
       return;
     }
-    setWeather(data);
-    setCity("");
+    setSearchTerm("");
+    setMovies(data.Search);
     setError("");
-  }
-  let iconurl = "";
+    setMovie(data.Search);
+    
 
-  if (weather) {
-    const iconCode = weather.weather[0].icon;
-    iconurl = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
   }
-  const currentDate = new Date();
-  const dateString = currentDate.toDateString();
-  const timeString = currentDate.toLocaleTimeString();
+  
   return(
     <div className="app">
       <div className="header">
-        <h1>Weather Dashboard</h1>
+        <h1>Movie Search App</h1>
       </div>
-      <div className="sub-content">
-        <input placeholder="Enter your city" value={city} onChange={(e) => setCity(e.target.value)} 
-          onKeyDown={(e) => {
-          if(e.key === "Enter") {
-            search();
-          }
-        }}></input>
-        <button onClick={search}> Search </button>
+      <div className="search-container">
+        <input className="input" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)}
+          placeholder="Ex. Avengers"
+          onKeyDown={
+          (e)=>{
+            if(e.key === "Enter") search();
+          }   
+        }
+        />
+        <button onClick={search}>Search</button>
       </div>
-      { (loading || error || weather) && (
-        <div className="main-content">
-          {loading && <h2>Loading....</h2>}
-          {weather && (
-            <div>
-              <h2>📅 {dateString}</h2>
-              <h2>🕒 {timeString}</h2>
-              <h2>📍 City: {weather.name}</h2>
-              <h2>🌡️ Temperature: {weather.main.temp}°C</h2>
-              <h2>☁️ Condition: {weather.weather[0].main}</h2>
-              <h2>💨 Wind Speed: {weather.wind.speed} m/s</h2>
-              <img src={iconurl} alt="Weather Icon" />
-            </div>
-          )}
-          {error && <h2 className="error">{error}</h2>}
-        </div>)
-      }
+      
+        
+      
+    
+      <div className="Movies">
+        {(error || loading || movies.length > 0) && (
+          <div className="Movies">
+            {error && <h2 className="error">{error}</h2>}
+            {loading && <h2>Loading...</h2>}
+
+            {movies.map((e, index) => (
+              <div key={index} className="Movie-list">
+                <img src={e.Poster !== "N/A" ? e.Poster : "https://via.placeholder.com/300x450?text=No+Image" } alt={e.Title} />
+                <h3>{e.Title}</h3>
+                <p>Year: {e.Year}</p>
+                <p>Type: {e.Type}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
     </div>
   );
 }
