@@ -2,6 +2,8 @@
 
 A modern React-based Movie Search Application that allows users to search for movies and view details such as posters, release year, and type using the OMDb API.
 
+![demo](react-movie-search.gif)
+
 ##
 
 ---
